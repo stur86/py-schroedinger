@@ -17,7 +17,7 @@ class Grid(object):
 
         bounds = np.array(bounds)
         if len(bounds.shape) != 2 or bounds.shape[1] != 2:
-           raise ValueError("Invalid bounds") 
+            raise ValueError("Invalid bounds")
 
         try:
             self.dim = len(size)
@@ -26,7 +26,7 @@ class Grid(object):
         except TypeError:
             if type(size) == int and size > 1:
                 self.dim = len(bounds)
-                size = (np.ones(self.dim)*size).astype(int)
+                size = (np.ones(self.dim) * size).astype(int)
             else:
                 raise ValueError("Invalid size")
 
@@ -35,14 +35,15 @@ class Grid(object):
 
         # Now to actually build this
         self.axes = np.array([np.linspace(b[0], b[1], self.size[i])
-                               for i, b in enumerate(self.bounds)])
-        self.dx   = np.abs([ax[1]-ax[0] for ax in self.axes])
-        # By this fairly complicated contraption we get to an array where the last coordinate updates faster
+                              for i, b in enumerate(self.bounds)])
+        self.dx = np.abs([ax[1] - ax[0] for ax in self.axes])
+        # By this fairly complicated contraption we get to an array where the
+        # last coordinate updates faster
         if (self.dim > 1 or int(np.version.version.split('.')[1]) >= 9):
             spacegrid = np.meshgrid(*np.roll(self.axes, -1, axis=0),
                                     indexing='ij')
         else:
-            spacegrid = [self.axes,]
+            spacegrid = [self.axes, ]
         spacegrid = np.swapaxes(spacegrid, 0, self.dim)
         spacegrid = np.roll(spacegrid, 1, axis=self.dim)
         spacegrid_lin = self.vol2lin(spacegrid)
@@ -59,7 +60,7 @@ class Grid(object):
         return self.grid_lin.shape
 
     def vol2lin(self, vol):
-        return np.reshape(vol, (int(np.prod(self.size)),-1))
+        return np.reshape(vol, (int(np.prod(self.size)), -1))
 
     def lin2vol(self, lin):
         return np.reshape(lin, tuple(list(self.size) + [-1]))
@@ -76,7 +77,7 @@ class Grid(object):
                             copy=False).shape == (int(np.prod(self.size)),)
         else:
             return (np.array(v,
-                            copy=False).shape == self.size).all()
+                             copy=False).shape == self.size).all()
 
     def gradient(self, v, lin=True):
         # Derive the given vector on grid
@@ -91,8 +92,8 @@ class Grid(object):
 
         grad = np.array(np.gradient(v, *self.dx))
         if len(grad.shape) == 1:
-            grad = grad[None,:]
-        grad = np.rollaxis(grad, 0, self.dim+1)
+            grad = grad[None, :]
+        grad = np.rollaxis(grad, 0, self.dim + 1)
 
         if lin:
             grad = self.vol2lin(grad)
@@ -102,8 +103,8 @@ class Grid(object):
     def random_p(self):
         # Random point from inside the bounds of the grid
         p = np.random.random(self.dim)
-        p *= self.bounds[:,1]-self.bounds[:,0]
-        p += self.bounds[:,0]
+        p *= self.bounds[:, 1] - self.bounds[:, 0]
+        p += self.bounds[:, 0]
 
         return p
 
@@ -113,5 +114,3 @@ class Grid(object):
             return np.where(plane_side(self.grid_lin, p0, n) == side)
         else:
             return np.where(plane_side(self.grid, p0, n) == side)
-
-

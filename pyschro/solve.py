@@ -17,6 +17,7 @@ from pyschro.basis import BasisSet, MNumerovBasis
 
 QEvol = namedtuple('QEvol', ['params', 't', 'E', 'density'])
 
+
 class QSolution(object):
 
     def __init__(self, bounds, size, V, m,
@@ -62,10 +63,9 @@ class QSolution(object):
         # Evecs in SPAAAAACE!
         self.evecs_grid = self.basis.basis2grid(self.evecs)
 
-
     def evec_grid(self, i):
         # Return evector i expressed in real space
-        return self.evecs_grid[:,i]
+        return self.evecs_grid[:, i]
 
     def P_grid(self, i):
         # Return probability density in real space for evector i
@@ -125,10 +125,10 @@ class QSolution(object):
         return psiT
 
     def density_of(self, psi):
-    
+
         # Normalize it
         psi /= np.linalg.norm(psi)
-        psigrid = np.dot(self.evecs_grid, psi)        
+        psigrid = np.dot(self.evecs_grid, psi)
         return np.abs(psigrid)**2
 
     def evolve(self, psi0=None, psi0grid=None,
@@ -147,10 +147,10 @@ class QSolution(object):
                 raise ValueError("Invalid psi0 passed to evolve")
             if psi0.shape[0] < self.N:
                 psi0 = np.pad(psi0,
-                              ((0, self.N-psi0.shape[0])), 
+                              ((0, self.N-psi0.shape[0])),
                               mode=str('constant'))
             else:
-                psi0 = psi0[:self.N]                            
+                psi0 = psi0[:self.N]
         elif psi0grid is not None:
             psi0grid = np.array(psi0grid)
             if len(psi0grid.shape) != 1:
@@ -177,13 +177,13 @@ class QSolution(object):
             # Now create the list of collapse operators
             for i in range(1, self.N):
                 Vi = np.zeros((self.N, self.N))
-                Vi[0,i] = 1.0
+                Vi[0, i] = 1.0
                 Vi = qu.Qobj(Vi)
                 # Now on to building the actual collapse operator
-                c = np.sqrt(gamma)*(np.sqrt(self.Z[0])*Vi+\
-                    np.sqrt(self.Z[i])*Vi.dag())
+                c = np.sqrt(gamma)*(np.sqrt(self.Z[0])*Vi +
+                                    np.sqrt(self.Z[i])*Vi.dag())
                 c_ops.append(c)
-    
+
         # Time evolution!
 
         H = qu.Qobj(np.diag(self.evals)/cnst.electron_volt)
@@ -219,14 +219,3 @@ class QSolution(object):
         self.evol = QEvol({'T': T, 'gamma': gamma}, evol_t, evol_E, evol_d)
 
         return self.evol
-
-
-
-
-
-
-
-
-
-
-
