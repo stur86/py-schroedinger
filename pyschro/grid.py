@@ -13,7 +13,7 @@ class Grid(object):
     """ A space grid on which to solve the Schroedinger equation of arbitrary
     dimensionality"""
 
-    def __init__(self, bounds, size):
+    def __init__(self, bounds, size, log=False):
 
         bounds = np.array(bounds)
         if len(bounds.shape) != 2 or bounds.shape[1] != 2:
@@ -34,9 +34,16 @@ class Grid(object):
         self.size = size
 
         # Now to actually build this
-        self.axes = np.array([np.linspace(b[0], b[1], self.size[i])
-                              for i, b in enumerate(self.bounds)])
-        self.dx = np.abs([ax[1] - ax[0] for ax in self.axes])
+        self._log = log
+        if not log:
+            self.axes = np.array([np.linspace(b[0], b[1], self.size[i])
+                                  for i, b in enumerate(self.bounds)])
+            self.dx = np.abs([ax[1] - ax[0] for ax in self.axes])
+        else:
+            self.axes = np.array([b[0]*np.exp(np.linspace(0, np.log(b[1]/b[0]),
+                                                          self.size[i]))
+                                  for i, b in enumerate(self.bounds)])
+            self.dx = np.abs([ax[1]/ax[0] for ax in self.axes])
         # By this fairly complicated contraption we get to an array where the
         # last coordinate updates faster
         if (self.dim > 1 or int(np.version.version.split('.')[1]) >= 9):
@@ -58,6 +65,10 @@ class Grid(object):
     @property
     def linshape(self):
         return self.grid_lin.shape
+
+    @property
+    def log(self):
+        return self._log
 
     def vol2lin(self, vol):
         return np.reshape(vol, (int(np.prod(self.size)), -1))
