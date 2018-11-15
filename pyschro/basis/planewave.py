@@ -13,16 +13,21 @@ from pyschro.grid import Grid
 from pyschro.basis.basis import BasisSet
 from pyschro.utils import multikron
 
+
 class PlanewaveBasis(BasisSet):
 
     def __init__(self, grid, V, m):
+
+        if grid.log:
+            raise NotImplementedError('Logarithmic grids not supported for'
+                                      ' plane wave basis')
 
         super(PlanewaveBasis, self).__init__(grid, V, m)
 
         # Now define the k grid and the Hamiltonian
         kbounds = []
         for i, s in enumerate(grid.size):
-            if s%2 == 0:
+            if s % 2 == 0:
                 kbounds.append((-s/2.0/(grid.dx[i]*s),
                                 (s/2.0-1)/(grid.dx[i]*s)))
             else:
@@ -30,9 +35,9 @@ class PlanewaveBasis(BasisSet):
                                 (s-1)/2.0/(grid.dx[i]*s)))
 
         self.kgrid = Grid(kbounds, grid.size)
-        self.repr = np.exp(-1.0j*2.0*np.pi*\
-                           np.sum(self.kgrid.grid_lin[:,None,:]*\
-                                  self.spacegrid.grid_lin[None,:,:],
+        self.repr = np.exp(-1.0j*2.0*np.pi *
+                           np.sum(self.kgrid.grid_lin[:, None, :] *
+                                  self.spacegrid.grid_lin[None, :, :],
                                   axis=-1))
         self.repr /= np.sqrt(np.prod(self.kgrid.size))
 
@@ -43,7 +48,6 @@ class PlanewaveBasis(BasisSet):
         # Now for the kinetic component. This is easy, as a wavefunction of
         # form exp(-i*k*x) has second derivative -k**2 * exp(-i*k*x).
         # So that's all we need.
-        self.H += (cnst.hbar**2.0)/(2.0*m)*\
-                  (np.diag(4.0*np.pi**2.0*\
-                   np.linalg.norm(self.kgrid.grid_lin, axis=-1)**2))        
-
+        self.H += (cnst.hbar**2.0)/(2.0*m) *\
+                  (np.diag(4.0*np.pi**2.0 *
+                           np.linalg.norm(self.kgrid.grid_lin, axis=-1)**2))

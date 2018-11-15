@@ -19,6 +19,11 @@ class MNumerovBasis(BasisSet):
 
         super(MNumerovBasis, self).__init__(grid, V, m)
 
+        if grid.log:
+            raise NotImplementedError('Logarithmic grids not supported for'
+                                      ' simple Numerov basis. Use radial'
+                                      ' Numerov.')
+
         # Now do our own thing!
 
         # This is a bit messy so we go by steps. First, we generate the
