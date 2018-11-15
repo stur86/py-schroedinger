@@ -14,4 +14,8 @@ from setuptools import setup
 
 setup(name='PySchroedinger',
       version='0.9',
-      packages=['pyschro'])
+      packages=['pyschro'],
+      install_requires=[
+          'numpy>=1.11',
+          'scipy',
+          'qutip'])

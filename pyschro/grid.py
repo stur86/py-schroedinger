@@ -101,10 +101,15 @@ class Grid(object):
         if lin:
             v = np.squeeze(self.lin2vol(v), axis=-1)
 
-        grad = np.array(np.gradient(v, *self.dx))
+        if not self.log:
+            grad = np.array(np.gradient(v, *self.dx))
+        else:
+            grad = np.array(np.gradient(v))
+            grad /= np.moveaxis(self.grid*np.log(self.dx), 2, 0)
+
         if len(grad.shape) == 1:
             grad = grad[None, :]
-        grad = np.rollaxis(grad, 0, self.dim + 1)
+        grad = np.moveaxis(grad, 0, -1)
 
         if lin:
             grad = self.vol2lin(grad)
