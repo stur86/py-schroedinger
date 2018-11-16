@@ -41,7 +41,7 @@ class QSolution(object):
             except AssertionError:
                 raise RuntimeError("Hamiltonian is not Hermitian, "
                                    "something has gone terribly wrong!")
-            self.evals, self.evecs = np.linalg.eigh(H)
+            self.evals, self.evecs = self.basis.eigenstates()
         else:
             H = self.basis.H
             try:

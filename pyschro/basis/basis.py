@@ -70,3 +70,6 @@ class BasisSet(object):
         #gwave = np.squeeze(gwave, -1)
 
         return self.grid2basis(gwave)
+
+    def eigenstates(self):
+        return np.linalg.eigh(self.H.toarray())

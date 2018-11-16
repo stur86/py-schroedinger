@@ -8,6 +8,7 @@ import numpy as np
 import scipy.constants as cnst
 import scipy.sparse as scisp
 import scipy.sparse.linalg as scisp_lin
+import scipy.linalg as sci_lin
 
 from pyschro.basis.basis import BasisSet
 from pyschro.utils import multikron
@@ -45,6 +46,7 @@ class Radial3DNumerovBasis(BasisSet):
         # And here's the Hamiltonian
 
         self._K = K
+        self._V = scisp.spdiags((self.V), [0], gn, gn, format='csc')
         self._VR2 = scisp.spdiags((self.V*grid.grid_lin[:, 0]**2,), [0],
                                   gn, gn,
                                   format='csc')
@@ -57,6 +59,23 @@ class Radial3DNumerovBasis(BasisSet):
         gn = self.spacegrid.size[0]
 
         self.l = l
-        self._Vrot = ((cnst.hbar**2.0)/(2.0*self.m)*(l+0.5)**2 *
-                      scisp.identity(gn, format='csc'))
-        self.H = self._K + self._VR2 + self._Vrot
+        if self.spacegrid.log:
+            self._Vrot = ((cnst.hbar**2.0)/(2.0*self.m)*(l+0.5)**2 *
+                          scisp.identity(gn, format='csc'))
+            self.H = self._K + self._VR2 + self._Vrot
+        else:
+            self._Vrot = scisp.spdiags((cnst.hbar**2.0)/(2.0*self.m)*(l**2+l) *
+                                       self.spacegrid.grid_lin[:, 0]**-2, [0],
+                                       gn, gn, format='csc')
+            self.H = self._K + self._V + self._Vrot
+
+    def eigenstates(self):
+
+        if self.spacegrid.log:
+            evals, evecs = sci_lin.eigh(self.H.toarray(), self._R2.toarray())
+            evecs *= self.spacegrid.grid_lin[:, 0, None]**0.5
+            evecs /= np.linalg.norm(evecs, axis=0)[None, :]
+        else:
+            evals, evecs = np.linalg.eigh(self.H.toarray())
+
+        return evals, evecs
