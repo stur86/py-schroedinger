@@ -13,7 +13,7 @@ import scipy.sparse as scisp
 import scipy.sparse.linalg as scisp_lin
 
 from pyschro.grid import Grid
-from pyschro.basis import BasisSet, MNumerovBasis
+from pyschro.basis import BasisSet, MNumerovBasis, Radial3DNumerovBasis
 
 QEvol = namedtuple('QEvol', ['params', 't', 'E', 'density'])
 
@@ -24,6 +24,9 @@ class QSolution(object):
                  basis=MNumerovBasis,
                  basis_pars={},
                  n_states=None):
+
+        if basis == Radial3DNumerovBasis:
+            raise NotImplementedError('Radial solver not implemented yet')
 
         self.grid = Grid(bounds, size)
         # Check that the basis type matches
