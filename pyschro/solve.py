@@ -23,48 +23,21 @@ class QSolution(object):
     def __init__(self, bounds, size, V, m,
                  basis=MNumerovBasis,
                  basis_pars={},
-                 n_states=None):
+                 n_states=None,
+                 log=False):
 
-        if basis == Radial3DNumerovBasis:
-            raise NotImplementedError('Radial solver not implemented yet')
-
-        self.grid = Grid(bounds, size)
+        self.grid = Grid(bounds, size, log=log)
         # Check that the basis type matches
         if not issubclass(basis, BasisSet):
             raise ValueError("Invalid basis set!")
-        self.basis = basis(self.grid, V, m, **basis_pars)
 
-        if n_states is None or n_states >= len(self.grid.grid_lin):
-            if hasattr(self.basis.H, 'toarray'):
-                H = self.basis.H.toarray()
-            else:
-                H = self.basis.H
-            try:
-                assert(np.isclose(H-H.conjugate().T, 0).all())
-            except AssertionError:
-                raise RuntimeError("Hamiltonian is not Hermitian, "
-                                   "something has gone terribly wrong!")
-            self.evals, self.evecs = self.basis.eigenstates()
-        else:
-            H = self.basis.H
-            try:
-                HHcheck = (H-H.conjugate().T)
-                if hasattr(HHcheck, 'todense'):
-                    HHcheck = HHcheck.todense()
-                assert(np.isclose(HHcheck, 0).all())
-            except AssertionError:
-                raise RuntimeError("Hamiltonian is not Hermitian, "
-                                   "something has gone terribly wrong!")
-            (self.evals,
-             self.evecs) = scisp_lin.eigsh(H,
-                                           k=n_states,
-                                           which='LM',
-                                           sigma=np.amin(self.basis.V))
+        self.V = V
+        self.m = m
+        self.n_states = n_states
 
-        self.N = len(self.evals)
+        self._basis_func = basis
 
-        # Evecs in SPAAAAACE!
-        self.evecs_grid = self.basis.basis2grid(self.evecs)
+        self.set_basis_pars(**basis_pars)
 
     def evec_grid(self, i):
         # Return evector i expressed in real space
@@ -74,6 +47,63 @@ class QSolution(object):
         # Return probability density in real space for evector i
         ev = self.evec_grid(i)
         return np.abs(ev)**2
+
+    def set_basis_pars(self, **basis_pars):
+        # New parameters for the basis
+
+        self.basis = self._basis_func(self.grid,
+                                      self.V, self.m, **basis_pars)
+
+        if self.n_states is None or self.n_states >= len(self.grid.grid_lin):
+            if hasattr(self.basis.H, 'toarray'):
+                H = self.basis.H.toarray()
+            else:
+                H = self.basis.H
+            if not np.isclose(H-H.conjugate().T, 0).all():
+                raise RuntimeError("Hamiltonian is not Hermitian, "
+                                   "something has gone terribly wrong!")
+            self.evals, self.evecs = self.basis.eigenstates()
+        else:
+
+            if self.basis.spacegrid.log:
+                raise NotImplementedError("Logarithmic grids not supported"
+                                          " for partial diagonalization")
+
+            H = self.basis.H
+            HHcheck = (H-H.conjugate().T)
+            if hasattr(HHcheck, 'todense'):
+                HHcheck = HHcheck.todense()
+            if not np.isclose(HHcheck, 0).all():
+                raise RuntimeError("Hamiltonian is not Hermitian, "
+                                   "something has gone terribly wrong!")
+
+            (self.evals,
+             self.evecs) = scisp_lin.eigsh(H,
+                                           k=self.n_states,
+                                           which='LM',
+                                           sigma=np.amin(self.basis.V))
+
+        self.N = len(self.evals)
+
+        # Evecs in SPAAAAACE!
+        self.evecs_grid = self.basis.basis2grid(self.evecs)
+
+    def param_scan(self, pscans):
+
+        # Starting config:
+        p0 = {pname: prange[0] for pname, prange in pscans.items()}
+
+        solutions = {}
+        # All scans
+        for pname, prange in pscans.items():
+            solutions[pname] = []
+            pars = p0.copy()
+            for pval in prange:
+                pars[pname] = pval
+                self.set_basis_pars(**pars)
+                solutions[pname].append((self.evals, self.evecs))
+
+        return solutions
 
     def partition_function(self, T):
 
