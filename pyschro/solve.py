@@ -6,7 +6,10 @@ from __future__ import unicode_literals
 
 from collections import namedtuple
 
-import qutip as qu
+try:
+    import qutip as qu
+except ImportError:
+    qu = None
 import numpy as np
 import scipy.constants as cnst
 import scipy.sparse as scisp
@@ -135,6 +138,10 @@ class QSolution(object):
                psi0basis=None,
                dt=1e-18, t_steps=1000,
                T=0, gamma=0.0):
+
+        if qu is None:
+            raise RuntimeError('A qutip installation is necessary for '
+                               'integrating the master equation')
 
         # First, define the starting wavefunction
         Umat_left = qu.Qobj(self.evecs)
